@@ -9,10 +9,10 @@ from torch.autograd import Variable
 from torch.nn.modules.conv import _ConvNd
 
 import os
-''''''
+'''
 import sys
 sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
-''''''
+'''
 import cv2
 from PIL import Image
 

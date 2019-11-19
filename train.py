@@ -7,103 +7,136 @@ import torch.nn.functional as F
 import numpy as np
 from torch.autograd import Variable
 from torch.nn.modules.conv import _ConvNd
-import visdom
 import os
+from models import *
+from DataLoader import CycleGANDataset
 import cv2
 from PIL import Image
 
-batch_size = 4
+import wandb
 
+batch_size = 1
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 target_size = 128
+e_identity = 0
+e_cycle = 10
 
-vis = visdom.Visdom( port='8097', env = 'DCGAN_3')
+wandb.init(project = "cycleGAN")
 
 def train():
 
-if __name__  == '__main__':
-    G = Generator()
-    D = Descriminator()
-    G = torch.nn.DataParallel(G)
-    D = torch.nn.DataParallel(D)
+
+    G_A2B = Generator().to(device)
+    G_B2A = Generator().to(device)
+    D_A = Discriminator().to(device)
+    D_B = Discriminator().to(device)
+    #G = torch.nn.DataParallel(G)
+    #D = torch.nn.DataParallel(D)
     #net.load_state_dict(torch.load('./parameters/paramters'))
     #print('model restored!')
-    Goptimizer = torch.optim.RMSprop(G.parameters(), lr = 0.00003)
-    Doptimizer = torch.optim.RMSprop(D.parameters(), lr = 0.00003)
+
+    G_A2B_optim = torch.optim.Adam(G_A2B.parameters(), lr = 0.0001)
+    G_B2A_optim = torch.optim.Adam(G_B2A.parameters(), lr=0.0001)
+    D_A_optim = torch.optim.Adam(D_A.parameters(), lr = 0.0001)
+    D_B_optim = torch.optim.Adam(D_B.parameters(), lr=0.0001)
 
     train_step = 0
-    mean_print = 1
 
-    D_train_loss = torch.autograd.Variable(torch.Tensor([1.0]))
-    G_train_loss = torch.autograd.Variable(torch.Tensor([3.0]))
+    L2Loss = nn.MSELoss()
+    L1Loss = nn.L1Loss()
 
-    Loss = nn.BCELoss()
+    for epoch in range(200):
+        for i, (imgA, imgB) in enumerate(trainloader):
 
-    for epoch in range(2000000):
-        for i, data in enumerate(trainloader):
-
-            for critic in range(1):
+            for Disc in range(1):
                 train_step += 1
+                # Discriminator steps
+                D_A.zero_grad()
+                D_B.zero_grad()
 
-                D.zero_grad()
-                input, labels = data
-                input, labels = Variable(input.cuda()), Variable(labels.cuda())
-                current_batch_size = len(input[:,0,0,0])
-                y_real = Variable(torch.ones(current_batch_size).cuda())
-                y_fake = Variable(torch.zeros(current_batch_size).cuda())
+                realA = imgA.to(device)
+                realB = imgB.to(device)
 
-                D_result = D(input)
+                fakeB = G_A2B(realA)
+                fakeA = G_B2A(realB)
 
-                D_real_loss = Loss(D_result, y_real)
+                D_A_real = D_A(realA)
+                D_A_fake = D_A(fakeA)
+                D_B_real = D_B(realB)
+                D_B_fake = D_B(fakeB)
 
-                D_real_score = D_result
+                y_real = torch.ones_like(D_A_real)
+                y_fake = -torch.ones_like(D_A_real)
 
-                v1 = Variable(torch.rand(current_batch_size, 100) * 2 - 1)
-                G_result1 = G(v1)
-                D_result = D(G_result1)
-                D_fake_loss = Loss(D_result, y_fake)
+                D_A_real_loss = L2Loss(D_A_real, y_real)
+                D_B_real_loss = L2Loss(D_B_real, y_real)
+                D_A_fake_loss = L2Loss(D_A_fake, y_fake)
+                D_B_fake_loss = L2Loss(D_B_fake, y_fake)
 
-                D_fake_score = D_result
+                D_A_GANLoss = (D_A_real_loss + D_A_fake_loss)/2
+                D_B_GANLoss = (D_B_real_loss + D_B_fake_loss)/2
 
-                #D_train_loss = -(D_real_loss - D_fake_loss), when D_real_loss = - Loss()
+                D_A_GANLoss.backward()
+                D_B_GANLoss.backward()
 
-                D_train_loss = D_real_loss + D_fake_loss
-
-                D_train_loss.backward()
-                Doptimizer.step()
-
-
-                print('[Discriminator training]')
-
-                if train_step % mean_print == 0:
-                    inputvis = vis.images((input[0:100, :, :, :] / 2 + 0.5).cpu(), win='inputvis', opts=dict(title='input'))
-                    Goutputvis = vis.images((G_result1[0:100, :].view(-1, 3, target_size, target_size) / 2 + 0.5).cpu(), win='outputvis',
-                                            opts=dict(title='Goutput1'))
+                D_A_optim.step()
+                D_B_optim.step()
 
                 if train_step % 1 == 0:
 
-                    G.zero_grad()
+                    G_A2B.zero_grad()
+                    G_B2A.zero_grad()
 
-                    y = Variable(torch.zeros(current_batch_size).cuda())
+                    fakeB = G_A2B(realA)
+                    fakeA = G_B2A(realB)
 
-                    v2 = Variable(torch.rand(current_batch_size, 100) * 2 - 1)
-                    G_result2 = G(v2)
+                    D_A_fake = D_A(fakeA)
+                    D_B_fake = D_B(fakeB)
 
-                    D_result = D(G_result2)
-                    G_train_loss = - Loss(D_result, y)
-                    G_train_loss.backward()
-                    Goptimizer.step()
+                    G_A2B_GANLoss = L2Loss(D_B_fake, y_real)
+                    G_B2A_GANLoss = L2Loss(D_A_fake, y_real)
 
-                    print('[Generator training]')
-                    if train_step % mean_print == 0:
-                        inputvis = vis.images((input[0:100, :, :, :] / 2 + 0.5).cpu(), win='inputvis', opts=dict(title='input'))
-                        Goutputvis1 = vis.images((G_result2[0:100, :].view(-1, 3, target_size, target_size) / 2 + 0.5).cpu(), win='outputvis1',
-                                                 opts=dict(title='Goutput2'))
+                    B_idt = G_A2B(realB)
+                    A_idt = G_B2A(realA)
 
-                        DV = torch.Tensor([D_train_loss.item()])
-                        lossvisD = vis.line(Y= DV, X = np.array([train_step]),win='lossvisD', update='append', opts=dict(title='Loss_D'))
-                        rD = vis.line(Y=torch.Tensor([D_real_loss.item()]), X=np.array([train_step]), win='rD', update='append',opts=dict(title='D real loss'))
-                        fD = vis.line(Y=torch.Tensor([D_fake_loss.item()]), X=np.array([train_step]), win='fD',update='append', opts=dict(title='D fake loss'))
+                    G_A2B_iLoss = L1Loss(B_idt, realB)
+                    G_B2A_iLoss = L1Loss(A_idt, realA)
+
+                    A_Cycle = G_B2A( G_A2B(realA))
+                    B_Cycle = G_A2B( G_B2A(realB))
+                    A_CycleLoss = L1Loss( A_Cycle , realA)
+                    B_CycleLoss = L1Loss( B_Cycle , realB)
+
+                    G_loss = (G_A2B_GANLoss + G_B2A_GANLoss) + e_identity*(G_A2B_iLoss + G_B2A_iLoss) + e_cycle*(A_CycleLoss+B_CycleLoss)
+                    G_loss.backward()
+                    G_A2B_optim.step()
+                    G_B2A_optim.step()
+
+                    if train_step % 5 == 0:
+                        wandb.log({"fakeB": [wandb.Image((255*np.array(fakeB[0].transpose(0,1).transpose(1,2).cpu().detach() * 2) + 0.5))],
+                                   "realA": [wandb.Image((255 * np.array(
+                                       realA[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
+                                   "realB": [wandb.Image((255 * np.array(
+                                       realB[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
+                                   "B_cycle": [wandb.Image((255 * np.array(
+                                       B_idt[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
+                                   "G_A2B_GANLoss": G_A2B_GANLoss.detach().cpu().numpy(),
+                                   "D_B_GANLoss": D_B_GANLoss.detach().cpu().numpy(),
+                                   "B_CycleLoss": B_CycleLoss.detach().cpu().numpy()
+                                   })
 
         print('epoch{}'.format(epoch + 1))
 
+
     print('####### ### #     # ###  #####  #     # ####### ######     ### ### \n#        #  ##    #  #  #     # #     # #       #     #    ### ###\n#        #  # #   #  #  #       #     # #       #     #    ### ###\n#####    #  #  #  #  #   #####  ####### #####   #     #     #   #\n#        #  #   # #  #        # #     # #       #     #\n#        #  #    ##  #  #     # #     # #       #     #    ### ###\n#       ### #     # ###  #####  #     # ####### ######     ### ###')
+
+if __name__  == '__main__':
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+    trainset = CycleGANDataset(root='./datasets/horse2zebra', transform=transform, train_flag='train')
+    # estset = torchvision.datasets.MNIST(root = './MNIST/test', train = False, download = True, transform = transform)
+
+    trainloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
+    # testloader = DataLoader(testset, batch_size = batch_size, shuffle = False, num_workers = 2)
+    train()

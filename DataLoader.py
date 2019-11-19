@@ -34,8 +34,6 @@ class CycleGANDataset(torch.utils.data.Dataset):
         return min(len(self.imagesNameA), len(self.imagesNameB))
 
     def __getitem__(self, idx):
-        print((self.imagesNameA[idx]))
-        print((self.imagesNameB[idx]))
         imgA = cv2.imread(self.root + 'A/' + self.imagesNameA[idx])
         imgA = cv2.resize(imgA, dsize=(target_size,target_size), interpolation=cv2.INTER_CUBIC)
         imgA = np.array(imgA)
@@ -61,12 +59,5 @@ trainloader = DataLoader(trainset, batch_size = batch_size, shuffle = True, num_
 #testloader = DataLoader(testset, batch_size = batch_size, shuffle = False, num_workers = 2)
 
 
-if __name__  == '__main__':
-
-    train_step = 1
-    for epoch in range(1):
-        for i, (imgA, imgB) in enumerate(trainloader):
-            print(imgA)
-            print(imgB)
 
 

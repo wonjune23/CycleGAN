@@ -43,12 +43,15 @@ class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
 
-        self.first_layer = ConvBlock(3, 32, 3, 1, 1)
+        self.first_layer = nn.Sequential(ConvBlock(3, 32, 3, 1, 1),
+                                          ResBlock(32, 3, 1, 1),
+                                          ResBlock(32, 3, 1, 1))
+
         inC = 32
 
         downsample = []
         for i in range(3):
-            downsample += [nn.MaxPool2d(2)]
+            downsample += [nn.AvgPool2d(2)]
             downsample += [ConvBlock(inC, inC*2, 3, 1, 1)]
             downsample += [ResBlock(inC*2, 3, 1, 1)]
             inC *= 2
@@ -72,8 +75,8 @@ class Generator(nn.Module):
         # input : B, 3, target_size, target_size
         first = self.first_layer(input)
         down = self.Down(first)
-        up = self.Up(down)
-        up = up + first # skip connection
+        up = self.Up(down) + first # skip connection
+
         final = self.last_layers(up)
 
         return F.tanh(final) # returns -1 ~ 1 output and latent vector
@@ -88,7 +91,7 @@ class Discriminator(nn.Module):
 
         downsample = []
         for i in range(4):
-            downsample += [nn.MaxPool2d(2)]
+            downsample += [nn.AvgPool2d(2)]
             downsample += [ConvBlock(inC, inC*2, 1, 1, 1)]
             downsample += [ResBlock(inC*2, 1, 1, 0)]
             inC *= 2
@@ -104,7 +107,7 @@ class Discriminator(nn.Module):
         x = self.Down(x)
         x = self.last_layers(x)
 
-        return F.sigmoid(x) # no sigmoid for WGAN
+        return x # no sigmoid for WGAN
 
 if __name__  == '__main__':
     G = Generator().cuda()

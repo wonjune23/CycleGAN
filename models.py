@@ -12,11 +12,11 @@ import os
 from PIL import Image
 
 class ResBlock(nn.Module):
-    def __init__(self, inC, kernel_size):
+    def __init__(self, inC, kernel_size, stride, pad_size):
         super(ResBlock, self).__init__()
 
-        self.conv1 = ConvBlock(inC, inC, kernel_size, 1, 1)
-        self.conv2 = ConvBlock(inC, inC, kernel_size, 1, 1)
+        self.conv1 = ConvBlock(inC, inC, kernel_size, stride, pad_size)
+        self.conv2 = ConvBlock(inC, inC, kernel_size, stride, pad_size)
 
     def forward(self, input):
         x = self.conv1(input)
@@ -49,23 +49,23 @@ class Generator(nn.Module):
         downsample = []
         for i in range(3):
             downsample += [nn.MaxPool2d(2)]
-            downsample += [ConvBlock(inC, inC**2, 3, 1, 1)]
-            downsample += [ResBlock(inC**2, 3)]
+            downsample += [ConvBlock(inC, inC*2, 3, 1, 1)]
+            downsample += [ResBlock(inC*2, 3, 1, 1)]
             inC *= 2
 
         self.Down = nn.Sequential( * downsample )
 
         upsample = []
         for i in range(3):
-            upsample += [F.upsample(scale_factor = 2)]
+            upsample += [nn.Upsample(scale_factor = 2)]
             upsample += [ConvBlock(inC, inC//2, 3, 1, 1)]
-            upsample += [ResBlock(inC//2, 3)]
+            upsample += [ResBlock(inC//2, 3, 1, 1)]
             inC = inC//2
 
         self.Up = nn.Sequential( * upsample )
 
-        self.last_layers = nn.Sequential( ResBlock(inC, 3),
-                                          ResBlock(inC, 3),
+        self.last_layers = nn.Sequential( ResBlock(inC, 3, 1, 1),
+                                          ResBlock(inC, 3, 1, 1),
                                           ConvBlock(inC, 3, 3, 1, 1))
 
     def forward(self, input):
@@ -89,13 +89,13 @@ class Discriminator(nn.Module):
         downsample = []
         for i in range(4):
             downsample += [nn.MaxPool2d(2)]
-            downsample += [ConvBlock(inC, inC**2, 1, 1, 1)]
-            downsample += [ResBlock(inC**2, 1)]
+            downsample += [ConvBlock(inC, inC*2, 1, 1, 1)]
+            downsample += [ResBlock(inC*2, 1, 1, 0)]
             inC *= 2
 
         self.Down = nn.Sequential( * downsample )
 
-        self.last_layers = nn.Sequential( ResBlock(inC, 1),
+        self.last_layers = nn.Sequential( ResBlock(inC, 1, 1, 0),
                                           ConvBlock(inC, 1, 1, 1, 1))
 
     def forward(self, input):
@@ -130,7 +130,7 @@ if __name__  == '__main__':
     trainset = CycleGANDataset(root='./datasets/horse2zebra', transform=transform, train_flag='train')
     # estset = torchvision.datasets.MNIST(root = './MNIST/test', train = False, download = True, transform = transform)
 
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
+    trainloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
     # testloader = DataLoader(testset, batch_size = batch_size, shuffle = False, num_workers = 2)
 
 
@@ -139,5 +139,5 @@ if __name__  == '__main__':
         train_step = 1
         for epoch in range(1):
             for i, (imgA, imgB) in enumerate(trainloader):
-                print(G(imgA))
-                print(D(G(imgA)))
+                print(G(imgA.cuda()))
+                print(D(G(imgA.cuda())))

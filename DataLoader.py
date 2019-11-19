@@ -9,14 +9,14 @@ from torch.autograd import Variable
 from torch.nn.modules.conv import _ConvNd
 
 import os
-''''''
+'''
 import sys
 sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
-''''''
+'''
 import cv2
 from PIL import Image
 
-batch_size = 2
+batch_size = 1
 
 target_size = 128
 
@@ -57,7 +57,7 @@ transform = transforms.Compose([transforms.ToTensor(),
 trainset = CycleGANDataset(root = './datasets/horse2zebra', transform = transform, train_flag = 'train')
 #estset = torchvision.datasets.MNIST(root = './MNIST/test', train = False, download = True, transform = transform)
 
-trainloader = DataLoader(trainset, batch_size = batch_size, shuffle = True, num_workers = 2)
+trainloader = DataLoader(trainset, batch_size = batch_size, shuffle = True, num_workers = 1)
 #testloader = DataLoader(testset, batch_size = batch_size, shuffle = False, num_workers = 2)
 
 

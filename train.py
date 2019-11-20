@@ -1,5 +1,6 @@
 from models import *
 import wandb
+from tqdm import tqdm
 
 def train(args, dataloader):
 
@@ -23,7 +24,7 @@ def train(args, dataloader):
     L2Loss = nn.MSELoss()
     L1Loss = nn.L1Loss()
     train_step = 0
-    for epoch in range(args.epoch):
+    for epoch in tqdm(range(args.epoch)):
         for i, (imgA, imgB) in enumerate(dataloader):
 
             for Disc in range(1):

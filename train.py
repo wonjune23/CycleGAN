@@ -1,15 +1,17 @@
 from models import *
-import wandb
 from tqdm import tqdm
 
+
 def train(args, dataloader):
+    if args.use_wandb:
+        import wandb
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     e_identity = args.e_identity
     e_cycle = args.e_cycle
 
     if args.use_wandb:
-        wandb.init(project="cycleGAN")
+        wandb.init(project="cycleGAN", name = f"{args.dataset}")
 
     G_A2B = Generator().to(device)
     G_B2A = Generator().to(device)
@@ -24,6 +26,7 @@ def train(args, dataloader):
     L2Loss = nn.MSELoss()
     L1Loss = nn.L1Loss()
     train_step = 0
+    print(f'training started!\n max_epochs: {args.epoch}')
     for epoch in tqdm(range(args.epoch)):
         for i, (imgA, imgB) in enumerate(dataloader):
 
@@ -94,7 +97,7 @@ def train(args, dataloader):
                     G_B2A_optim.step()
 
                     if args.use_wandb:
-                        if train_step % 5 == 0:
+                        if train_step % 100 == 0:
                             wandb.log({"fakeB": [wandb.Image((255*np.array(fakeB[0].transpose(0,1).transpose(1,2).cpu().detach() * 2) + 0.5))],
                                        "realA": [wandb.Image((255 * np.array(
                                            realA[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
@@ -106,8 +109,6 @@ def train(args, dataloader):
                                        "D_B_GANLoss": D_B_GANLoss.detach().cpu().numpy(),
                                        "B_CycleLoss": B_CycleLoss.detach().cpu().numpy()
                                        })
-
-        print('epoch{}'.format(epoch + 1))
 
     ckpt = {'G_A2B':G_A2B.state_dict(),
             'G_B2A':G_B2A.state_dict()}

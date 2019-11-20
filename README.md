@@ -10,6 +10,8 @@ CycleGAN pytorch custom implementation.
 
 - cv2 : pip install opencv-python
 
+- tqdm : pip install tqdm
+
 (optional) if you know how to use wandb..
 
 - wandb : pip install wandb
@@ -17,10 +19,10 @@ CycleGAN pytorch custom implementation.
 ## Train
 - python main.py --dataset [dataset_name] --mode [mode]
 
- - [dataset_name] examples include horse2zebra, maps, etc.
+ [dataset_name] : horse2zebra, maps, etc.
 
- - [mode] only takes train or test.
+ [mode] : train / test.
 
-- to use wandb, include --wandb 1
+- to use wandb : --wandb 1
 
-- to specify the gpu, include -- gpu [number]
+- to specify the gpu : --gpu [num]

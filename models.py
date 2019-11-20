@@ -42,41 +42,43 @@ class ConvBlock(nn.Module):
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
-
-        self.first_layer = nn.Sequential(ConvBlock(3, 32, 3, 1, 1),
-                                          ResBlock(32, 3, 1, 1),
-                                          ResBlock(32, 3, 1, 1))
-
-        inC = 32
+        inC = 64
+        self.first_layer = nn.Sequential(nn.ReflectionPad2d(3),
+                                         nn.Conv2d(3, inC, 7, 1, 0),
+                                         nn.InstanceNorm2d(inC),
+                                         nn.ReLU(True))
 
         downsample = []
-        for i in range(3):
-            downsample += [nn.AvgPool2d(2)]
-            downsample += [ConvBlock(inC, inC*2, 3, 1, 1)]
-            downsample += [ResBlock(inC*2, 3, 1, 1)]
+        for i in range(2):
+            downsample += [nn.Conv2d(inC, inC*2, 3, 2, 1)]
+            downsample += [nn.InstanceNorm2d(inC*2)]
+            downsample += [nn.ReLU(True)]
             inC *= 2
-
         self.Down = nn.Sequential( * downsample )
 
+        resblocks = []
+        for i in range(6):
+            resblocks += [ResBlock(inC,3, 1, 1)]
+        self.Residual = nn.Sequential(*resblocks)
+
         upsample = []
-        for i in range(3):
-            upsample += [nn.Upsample(scale_factor = 2)]
-            upsample += [ConvBlock(inC, inC//2, 3, 1, 1)]
-            upsample += [ResBlock(inC//2, 3, 1, 1)]
+        for i in range(2):
+            upsample += [nn.ConvTranspose2d(inC, inC//2, 3, 2, 1, output_padding=1)]
+            upsample += [nn.InstanceNorm2d(inC//2)]
+            upsample += [nn.ReLU(True)]
             inC = inC//2
 
         self.Up = nn.Sequential( * upsample )
 
-        self.last_layers = nn.Sequential( ResBlock(inC, 3, 1, 1),
-                                          ResBlock(inC, 3, 1, 1),
-                                          ConvBlock(inC, 3, 3, 1, 1))
+        self.last_layers = nn.Sequential( nn.ReflectionPad2d(3),
+                                          nn.Conv2d(inC, 3, 7, 1, 0))
 
     def forward(self, input):
         # input : B, 3, target_size, target_size
         first = self.first_layer(input)
         down = self.Down(first)
-        up = self.Up(down) + first # skip connection
-
+        res = self.Residual(down)
+        up = self.Up(res)
         final = self.last_layers(up)
 
         return F.tanh(final) # returns -1 ~ 1 output and latent vector
@@ -86,25 +88,28 @@ class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         # patch discriminator..
-        self.first_layer = ConvBlock(3, 32, 3, 1, 1)
-        inC = 32
+        inC = 64
+        self.first_layer = nn.Sequential( nn.Conv2d(3, inC, 4, 2, 1),
+                                          nn.LeakyReLU(0.2, True))
 
-        downsample = []
-        for i in range(4):
-            downsample += [nn.AvgPool2d(2)]
-            downsample += [ConvBlock(inC, inC*2, 1, 1, 1)]
-            downsample += [ResBlock(inC*2, 1, 1, 0)]
-            inC *= 2
+        layers = []
+        for i in range(3):
+            layers += [nn.Conv2d(inC, min(inC//2,8), 4, 2, 1)]
+            layers += [nn.InstanceNorm2d(min(inC//2,8))]
+            layers += [nn.LeakyReLU(0.2,True)]
+            inC = min(inC//2,8)
 
-        self.Down = nn.Sequential( * downsample )
+        self.Seq = nn.Sequential( * layers )
 
-        self.last_layers = nn.Sequential( ResBlock(inC, 1, 1, 0),
-                                          ConvBlock(inC, 1, 1, 1, 1))
+        self.last_layers = nn.Sequential( nn.Conv2d(inC, min(inC//2,8),4, 1, 1),
+                                          nn.InstanceNorm2d(min(inC//2,8)),
+                                          nn.LeakyReLU(0.2,True),
+                                          nn.Conv2d(min(inC//2,8), 1, 4, 1, 1))
 
     def forward(self, input):
         #x = input.reshape(-1, 3, target_size, target_size)
         x = self.first_layer(input)
-        x = self.Down(x)
+        x = self.Seq(x)
         x = self.last_layers(x)
 
         return x # no sigmoid for WGAN

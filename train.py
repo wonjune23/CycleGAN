@@ -1,54 +1,33 @@
-import torch
-import torchvision
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-from torch.autograd import Variable
-from torch.nn.modules.conv import _ConvNd
-import os
 from models import *
-from DataLoader import CycleGANDataset
-import cv2
-from PIL import Image
-
 import wandb
 
-batch_size = 1
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-target_size = 128
-e_identity = 0
-e_cycle = 10
+def train(args, dataloader):
 
-wandb.init(project = "cycleGAN")
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    e_identity = args.e_identity
+    e_cycle = args.e_cycle
 
-def train():
-
+    if args.use_wandb:
+        wandb.init(project="cycleGAN")
 
     G_A2B = Generator().to(device)
     G_B2A = Generator().to(device)
     D_A = Discriminator().to(device)
     D_B = Discriminator().to(device)
-    #G = torch.nn.DataParallel(G)
-    #D = torch.nn.DataParallel(D)
-    #net.load_state_dict(torch.load('./parameters/paramters'))
-    #print('model restored!')
 
-    G_A2B_optim = torch.optim.Adam(G_A2B.parameters(), lr = 0.0001)
-    G_B2A_optim = torch.optim.Adam(G_B2A.parameters(), lr=0.0001)
-    D_A_optim = torch.optim.Adam(D_A.parameters(), lr = 0.0001)
-    D_B_optim = torch.optim.Adam(D_B.parameters(), lr=0.0001)
-
-    train_step = 0
+    G_A2B_optim = torch.optim.Adam(G_A2B.parameters(), lr = args.lr)
+    G_B2A_optim = torch.optim.Adam(G_B2A.parameters(), lr=args.lr)
+    D_A_optim = torch.optim.Adam(D_A.parameters(), lr = args.lr)
+    D_B_optim = torch.optim.Adam(D_B.parameters(), lr=args.lr)
 
     L2Loss = nn.MSELoss()
     L1Loss = nn.L1Loss()
-
-    for epoch in range(200):
-        for i, (imgA, imgB) in enumerate(trainloader):
+    train_step = 0
+    for epoch in range(args.epoch):
+        for i, (imgA, imgB) in enumerate(dataloader):
 
             for Disc in range(1):
+
                 train_step += 1
                 # Discriminator steps
                 D_A.zero_grad()
@@ -83,6 +62,7 @@ def train():
                 D_B_optim.step()
 
                 if train_step % 1 == 0:
+                    # Generator step
 
                     G_A2B.zero_grad()
                     G_B2A.zero_grad()
@@ -112,31 +92,26 @@ def train():
                     G_A2B_optim.step()
                     G_B2A_optim.step()
 
-                    if train_step % 5 == 0:
-                        wandb.log({"fakeB": [wandb.Image((255*np.array(fakeB[0].transpose(0,1).transpose(1,2).cpu().detach() * 2) + 0.5))],
-                                   "realA": [wandb.Image((255 * np.array(
-                                       realA[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
-                                   "realB": [wandb.Image((255 * np.array(
-                                       realB[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
-                                   "B_cycle": [wandb.Image((255 * np.array(
-                                       B_idt[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
-                                   "G_A2B_GANLoss": G_A2B_GANLoss.detach().cpu().numpy(),
-                                   "D_B_GANLoss": D_B_GANLoss.detach().cpu().numpy(),
-                                   "B_CycleLoss": B_CycleLoss.detach().cpu().numpy()
-                                   })
+                    if args.use_wandb:
+                        if train_step % 5 == 0:
+                            wandb.log({"fakeB": [wandb.Image((255*np.array(fakeB[0].transpose(0,1).transpose(1,2).cpu().detach() * 2) + 0.5))],
+                                       "realA": [wandb.Image((255 * np.array(
+                                           realA[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
+                                       "realB": [wandb.Image((255 * np.array(
+                                           realB[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
+                                       "B_cycle": [wandb.Image((255 * np.array(
+                                           B_idt[0].transpose(0, 1).transpose(1, 2).cpu().detach() * 2) + 0.5))],
+                                       "G_A2B_GANLoss": G_A2B_GANLoss.detach().cpu().numpy(),
+                                       "D_B_GANLoss": D_B_GANLoss.detach().cpu().numpy(),
+                                       "B_CycleLoss": B_CycleLoss.detach().cpu().numpy()
+                                       })
 
         print('epoch{}'.format(epoch + 1))
 
-
-    print('####### ### #     # ###  #####  #     # ####### ######     ### ### \n#        #  ##    #  #  #     # #     # #       #     #    ### ###\n#        #  # #   #  #  #       #     # #       #     #    ### ###\n#####    #  #  #  #  #   #####  ####### #####   #     #     #   #\n#        #  #   # #  #        # #     # #       #     #\n#        #  #    ##  #  #     # #     # #       #     #    ### ###\n#       ### #     # ###  #####  #     # ####### ######     ### ###')
-
-if __name__  == '__main__':
-    transform = transforms.Compose([transforms.ToTensor(),
-                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-    trainset = CycleGANDataset(root='./datasets/horse2zebra', transform=transform, train_flag='train')
-    # estset = torchvision.datasets.MNIST(root = './MNIST/test', train = False, download = True, transform = transform)
-
-    trainloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
-    # testloader = DataLoader(testset, batch_size = batch_size, shuffle = False, num_workers = 2)
-    train()
+    ckpt = {'G_A2B':G_A2B.state_dict(),
+            'G_B2A':G_B2A.state_dict()}
+    if not os.path.isdir('./checkpoints'):
+        os.makedirs('./checkpoints')
+    torch.save(ckpt, f'./checkpoints/{args.dataset}')
+    print('\nmodels saved!')
+    print('training finished!')

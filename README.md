@@ -1,7 +1,7 @@
 # CycleGAN
 CycleGAN pytorch custom implementation.
 
-## Requirements
+## Prerequisites
 - python-anaconda (3.6)
 
 - pytorch
@@ -17,12 +17,12 @@ CycleGAN pytorch custom implementation.
 - wandb : pip install wandb
 
 ## Train
-- python main.py --dataset [dataset_name] --mode [mode]
+    python main.py --dataset [dataset_name] --mode [mode]     
 
- [dataset_name] : horse2zebra, maps, etc.
+[dataset_name] : horse2zebra, maps, etc.
 
- [mode] : train / test.
+[mode] : train / test.
 
-- to use wandb : --wandb 1
+to use wandb : --use_wandb 1
 
-- to specify the gpu : --gpu [num]
+to specify the gpu : --gpu [num]

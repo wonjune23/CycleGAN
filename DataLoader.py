@@ -2,6 +2,9 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 import os
+
+import sys
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 
 class CycleGANDataset(torch.utils.data.Dataset):
@@ -39,9 +42,9 @@ class CycleGANDataset(torch.utils.data.Dataset):
 
 
 class CycleGANTestDataset(torch.utils.data.Dataset):
-    def __init__(self, direction, transform):
+    def __init__(self, args, direction, transform):
 
-        root = f'./datasets/test'
+        root = f'./datasets/{args.dataset}'
 
         self.root = os.path.expanduser(root+'/test')
         self.transform = transform

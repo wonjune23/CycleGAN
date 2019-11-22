@@ -20,25 +20,26 @@ def test(args):
 
     transform = transforms.Compose([transforms.ToTensor(),
                                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    testset = CycleGANTestDataset(direction='A2B', transform=transform)
+    testset = CycleGANTestDataset(args, direction='A2B', transform=transform)
     dataloader = DataLoader(testset, batch_size=1, shuffle=False, num_workers=2)
 
     print(f'A2B conversion started!\n')
-    for i, (img, name) in tqdm(enumerate(dataloader)):
+    for img, name in tqdm(dataloader):
 
-        realA = imgA.to(device)
+        realA = img.to(device)
         fakeB = G_A2B(realA)
+        result = (fakeB[0].transpose(0, 1).transpose(1, 2).detach().cpu().numpy()) / 2 + 0.5
+        plt.imsave(f'./results/{args.dataset}/A2B/{name[0]}', result)
 
-        plt.imsave(f'./results/{args.dataset}/A2B/name',255*(fakeB.cpu().numpy()/2+0.5))
 
-    testset = CycleGANTestDataset(direction='B2A', transform=transform)
+    testset = CycleGANTestDataset(args, direction='B2A', transform=transform)
     dataloader = DataLoader(testset, batch_size=1, shuffle=False, num_workers=2)
     print(f'B2A conversion started!\n')
-    for i, (img, name) in tqdm(enumerate(dataloader)):
+    for img, name in tqdm(dataloader):
 
-        realB = imgB.to(device)
+        realB = img.to(device)
         fakeA = G_B2A(realB)
+        result = (fakeA[0].transpose(0, 1).transpose(1, 2).detach().cpu().numpy()) / 2 +0.5
+        plt.imsave(f'./results/{args.dataset}/B2A/{name[0]}', result)
 
-        plt.imsave(f'./results/{args.dataset}/B2A/name', 255 * (fakeA.cpu().numpy() / 2 + 0.5))
-
-    print('testing finished!')
+    print(f'{args.dataset} testing finished!')

@@ -1,8 +1,8 @@
 from models import *
 from tqdm import tqdm
+from DataLoader import CycleGANDataset
 
-
-def train(args, dataloader):
+def train(args):
     if args.use_wandb:
         import wandb
 
@@ -26,6 +26,12 @@ def train(args, dataloader):
     L2Loss = nn.MSELoss()
     L1Loss = nn.L1Loss()
     train_step = 0
+
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    trainset = CycleGANDataset(args, transform=transform)
+    dataloader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+
     print(f'training started!\n max_epochs: {args.epoch}')
     for epoch in tqdm(range(args.epoch)):
         for i, (imgA, imgB) in enumerate(dataloader):

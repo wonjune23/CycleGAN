@@ -1,9 +1,8 @@
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
 import argparse
 import os
+from test import test
 from train import train
-from DataLoader import CycleGANDataset
+from DataLoader import CycleGANDataset, CycleGANTestDataset
 
 parser = argparse.ArgumentParser()
 
@@ -26,14 +25,12 @@ batch_size = args.batch_size
 target_size = args.target_size
 
 if __name__  == '__main__':
-    transform = transforms.Compose([transforms.ToTensor(),
-                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    trainset = CycleGANDataset(args, transform=transform)
-    dataloader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
     if args.mode == 'train':
-        train(args, dataloader)
+        train(args)
+
     elif args.mode == 'test':
-        pass
+        test(args)
+
     else:
         raise NotImplementedError(f"args.mode takes only 'train' or 'test', but you have passed {args.mode}.")

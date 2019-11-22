@@ -17,13 +17,13 @@ CycleGAN pytorch custom implementation.
 - wandb : pip install wandb
 
 ## Train / Test
-- to train:
+- to train, run
 
-    python main.py --dataset [dataset_name] --mode train     
+     python main.py --dataset [dataset_name] --mode train     
 
-- to test:
+- to test, run
 
-    python main.py --dataset [dataset_name] --mode test    
+     python main.py --dataset [dataset_name] --mode test     
 
 [dataset_name] : horse2zebra, maps, apple2orange, cezanne2photo, facades, iphone2dslr_flower, moent2photo, summer2winter_yosemite, ukiyoe2photo, vangogh2photo
 

@@ -35,3 +35,5 @@ The datasets will be automatically downloaded using the original code provided b
 to use wandb : --use_wandb 1
 
 to specify the gpu : --gpu [num]
+
+You can see the example training processes here: https://app.wandb.ai/wonjune/cycleGAN?workspace=user-wonjune

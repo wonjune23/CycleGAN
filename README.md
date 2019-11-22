@@ -16,12 +16,16 @@ CycleGAN pytorch custom implementation.
 
 - wandb : pip install wandb
 
-## Train
-    python main.py --dataset [dataset_name] --mode [mode]     
+## Train / Test
+- to train:
+    python main.py --dataset [dataset_name] --mode train     
 
-[dataset_name] : horse2zebra, maps, etc.
+- to test:
+    python main.py --dataset [dataset_name] --mode test    
 
-[mode] : train / test.
+[dataset_name] : horse2zebra, maps, apple2orange, cezanne2photo, facades, iphone2dslr_flower, moent2photo, summer2winter_yosemite, ukiyoe2photo, vangogh2photo
+
+The datasets will be automatically downloaded using the original code provided by the authors: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.
 
 to use wandb : --use_wandb 1
 

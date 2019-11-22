@@ -18,9 +18,11 @@ CycleGAN pytorch custom implementation.
 
 ## Train / Test
 - to train:
+
     python main.py --dataset [dataset_name] --mode train     
 
 - to test:
+
     python main.py --dataset [dataset_name] --mode test    
 
 [dataset_name] : horse2zebra, maps, apple2orange, cezanne2photo, facades, iphone2dslr_flower, moent2photo, summer2winter_yosemite, ukiyoe2photo, vangogh2photo

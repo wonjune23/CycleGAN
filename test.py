@@ -26,9 +26,9 @@ def test(args):
     print(f'A2B conversion started!\n')
     for img, name in tqdm(dataloader):
 
-        realA = img.to(device)
-        fakeB = G_A2B(realA)
-        result = (fakeB[0].transpose(0, 1).transpose(1, 2).detach().cpu().numpy()) / 2 + 0.5
+        real = img.to(device)
+        fake = G_A2B(real)
+        result = (fake[0].transpose(0, 1).transpose(1, 2).detach().cpu().numpy()) / 2 + 0.5
         plt.imsave(f'./results/{args.dataset}/A2B/{name[0]}', result)
 
 
@@ -37,9 +37,9 @@ def test(args):
     print(f'B2A conversion started!\n')
     for img, name in tqdm(dataloader):
 
-        realB = img.to(device)
-        fakeA = G_B2A(realB)
-        result = (fakeA[0].transpose(0, 1).transpose(1, 2).detach().cpu().numpy()) / 2 +0.5
+        real = img.to(device)
+        fake = G_B2A(real)
+        result = (fake[0].transpose(0, 1).transpose(1, 2).detach().cpu().numpy()) / 2 +0.5
         plt.imsave(f'./results/{args.dataset}/B2A/{name[0]}', result)
 
     print(f'{args.dataset} testing finished!')

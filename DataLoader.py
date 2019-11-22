@@ -42,6 +42,11 @@ class CycleGANTestDataset(torch.utils.data.Dataset):
     def __init__(self, args, direction, transform):
 
         root = f'./datasets/{args.dataset}'
+        if not os.path.isdir(root):
+            print(f"\ndataset {args.dataset} doesn't exist: start downloading the dataset\n")
+            os.system(f"bash ./datasets/download_cyclegan_dataset.sh {args.dataset}")
+            print(f"\ndataset {args.dataset} download complete : start network {args.mode}ing now.\n")
+        root = f'./datasets/{args.dataset}'
 
         self.root = os.path.expanduser(root+'/test')
         self.transform = transform

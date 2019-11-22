@@ -2,7 +2,6 @@ import argparse
 import os
 from test import test
 from train import train
-from DataLoader import CycleGANDataset, CycleGANTestDataset
 
 parser = argparse.ArgumentParser()
 

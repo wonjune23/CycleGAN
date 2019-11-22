@@ -17,11 +17,11 @@ CycleGAN pytorch custom implementation.
 - wandb : pip install wandb
 
 ## Train / Test
-- to train, run
+to train, run
 
      python main.py --dataset [dataset_name] --mode train     
 
-- to test, run
+to test, run
 
      python main.py --dataset [dataset_name] --mode test     
 

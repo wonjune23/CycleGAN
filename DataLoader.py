@@ -6,7 +6,7 @@ import cv2
 
 class CycleGANDataset(torch.utils.data.Dataset):
     def __init__(self, args, transform):
-        assert ((args.mode == 'train') | (args.mode == 'test')) , 'train_flag is wrong'
+
         self.train_flag = args.mode
         root = f'./datasets/{args.dataset}'
         if not os.path.isdir(root):
@@ -36,3 +36,25 @@ class CycleGANDataset(torch.utils.data.Dataset):
         imgB = imgB[[2, 1, 0], :, :]
 
         return imgA, imgB
+
+
+class CycleGANTestDataset(torch.utils.data.Dataset):
+    def __init__(self, direction, transform):
+
+        root = f'./datasets/test'
+
+        self.root = os.path.expanduser(root+'/test')
+        self.transform = transform
+        self.data = 'A' if direction=='A2B' else 'B'
+        self.imagesName = os.listdir(self.root + self.data)
+
+    def __len__(self):
+        return len(self.imagesName)
+
+    def __getitem__(self, idx):
+        img = cv2.imread(self.root + f'{self.data}/' + self.imagesName[idx])
+        img = np.array(img)
+        img = self.transform(img)
+        img = img[[2,1,0],:,:]
+
+        return img, self.imagesName[idx]

@@ -81,7 +81,7 @@ class Generator(nn.Module):
         up = self.Up(res)
         final = self.last_layers(up)
 
-        return F.tanh(final) # returns -1 ~ 1 output and latent vector
+        return torch.tanh(final) # returns -1 ~ 1 output and latent vector
 
 class Discriminator(nn.Module):
 

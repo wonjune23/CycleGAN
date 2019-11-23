@@ -5,6 +5,9 @@
 CycleGAN pytorch custom implementation.
 
 ## Prerequisites
+
+- Linux
+
 - python-anaconda (3.6)
 
 - pytorch

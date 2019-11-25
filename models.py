@@ -107,7 +107,6 @@ class Discriminator(nn.Module): # Discriminator step. it is 70x70 patch discrimi
                                           nn.Conv2d(min(inC//2,8), 1, 4, 1, 1)) # At the very last, map the feature maps into one-channel score map.
 
     def forward(self, input):
-        #x = input.reshape(-1, 3, target_size, target_size)
         x = self.first_layer(input)
         x = self.Seq(x)
         x = self.last_layers(x)

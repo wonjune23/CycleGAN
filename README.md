@@ -27,17 +27,17 @@ CycleGAN pytorch custom implementation.
 - Clone this repo and change directory:
 
 
-     git clone https://github.com/wonjune23/CycleGAN.git     
-     cd CycleGAN
+      git clone https://github.com/wonjune23/CycleGAN.git     
+      cd CycleGAN
 - to train, run
 
 
-     python main.py --dataset [dataset_name] --mode train     
+      python main.py --dataset [dataset_name] --mode train     
 
 - to test, run
 
 
-     python main.py --dataset [dataset_name] --mode test     
+      python main.py --dataset [dataset_name] --mode test     
 
 
 [dataset_name] : horse2zebra, maps, apple2orange, cezanne2photo, facades, iphone2dslr_flower, moent2photo, summer2winter_yosemite, ukiyoe2photo, vangogh2photo

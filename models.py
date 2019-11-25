@@ -11,7 +11,7 @@ from DataLoader import CycleGANDataset
 import os
 from PIL import Image
 
-class ResBlock(nn.Module):
+class ResBlock(nn.Module): # Residual Block. it consists of 2 ConvBlocks and residual connection.
     def __init__(self, inC, kernel_size, stride, pad_size):
         super(ResBlock, self).__init__()
 
@@ -23,7 +23,7 @@ class ResBlock(nn.Module):
         x = self.conv2(x)
         return input + x
 
-class ConvBlock(nn.Module):
+class ConvBlock(nn.Module): # ConvBLock. it consists of reflection padding, convolution, instance normalization, and ReLU.
     def __init__(self, inC, outC, kernel_size, stride, pad_size):
         super(ConvBlock, self).__init__()
 
@@ -39,16 +39,16 @@ class ConvBlock(nn.Module):
         x = self.relu(x)
         return x
 
-class Generator(nn.Module):
+class Generator(nn.Module): # Generator network. it consists of several downsampling layers, 6 residual blocks, and upsampling layers.
     def __init__(self):
         super(Generator, self).__init__()
-        inC = 64
-        self.first_layer = nn.Sequential(nn.ReflectionPad2d(3),
+        inC = 64 # number of channels in first conv layer
+        self.first_layer = nn.Sequential(nn.ReflectionPad2d(3), # first layer.
                                          nn.Conv2d(3, inC, 7, 1, 0),
                                          nn.InstanceNorm2d(inC),
                                          nn.ReLU(True))
 
-        downsample = []
+        downsample = [] # downsampling layers.
         for i in range(2):
             downsample += [nn.Conv2d(inC, inC*2, 3, 2, 1)]
             downsample += [nn.InstanceNorm2d(inC*2)]
@@ -56,12 +56,12 @@ class Generator(nn.Module):
             inC *= 2
         self.Down = nn.Sequential( * downsample )
 
-        resblocks = []
+        resblocks = [] # residual block layers.
         for i in range(6):
             resblocks += [ResBlock(inC,3, 1, 1)]
         self.Residual = nn.Sequential(*resblocks)
 
-        upsample = []
+        upsample = [] # upsampling layers.
         for i in range(2):
             upsample += [nn.ConvTranspose2d(inC, inC//2, 3, 2, 1, output_padding=1)]
             upsample += [nn.InstanceNorm2d(inC//2)]
@@ -70,7 +70,7 @@ class Generator(nn.Module):
 
         self.Up = nn.Sequential( * upsample )
 
-        self.last_layers = nn.Sequential( nn.ReflectionPad2d(3),
+        self.last_layers = nn.Sequential( nn.ReflectionPad2d(3), # The last layer to map the feature maps into image space.
                                           nn.Conv2d(inC, 3, 7, 1, 0))
 
     def forward(self, input):
@@ -81,18 +81,18 @@ class Generator(nn.Module):
         up = self.Up(res)
         final = self.last_layers(up)
 
-        return torch.tanh(final) # returns -1 ~ 1 output and latent vector
+        return torch.tanh(final) # return image in [-1 , 1] (the images are normalized to lie in [-1,1] in the prepcoess step)
 
-class Discriminator(nn.Module):
+class Discriminator(nn.Module): # Discriminator step. it is 70x70 patch discriminator.
 
     def __init__(self):
         super(Discriminator, self).__init__()
-        # patch discriminator..
-        inC = 64
-        self.first_layer = nn.Sequential( nn.Conv2d(3, inC, 4, 2, 1),
+
+        inC = 64 # number of channels in first conv layer
+        self.first_layer = nn.Sequential( nn.Conv2d(3, inC, 4, 2, 1), # the first layer.
                                           nn.LeakyReLU(0.2, True))
 
-        layers = []
+        layers = [] # mid layers.
         for i in range(3):
             layers += [nn.Conv2d(inC, min(inC//2,8), 4, 2, 1)]
             layers += [nn.InstanceNorm2d(min(inC//2,8))]
@@ -101,10 +101,10 @@ class Discriminator(nn.Module):
 
         self.Seq = nn.Sequential( * layers )
 
-        self.last_layers = nn.Sequential( nn.Conv2d(inC, min(inC//2,8),4, 1, 1),
+        self.last_layers = nn.Sequential( nn.Conv2d(inC, min(inC//2,8),4, 1, 1), # last conv block.
                                           nn.InstanceNorm2d(min(inC//2,8)),
                                           nn.LeakyReLU(0.2,True),
-                                          nn.Conv2d(min(inC//2,8), 1, 4, 1, 1))
+                                          nn.Conv2d(min(inC//2,8), 1, 4, 1, 1)) # At the very last, map the feature maps into one-channel score map.
 
     def forward(self, input):
         #x = input.reshape(-1, 3, target_size, target_size)
@@ -112,40 +112,4 @@ class Discriminator(nn.Module):
         x = self.Seq(x)
         x = self.last_layers(x)
 
-        return x # no sigmoid for WGAN
-
-if __name__  == '__main__':
-    G = Generator().cuda()
-    D = Discriminator().cuda()
-    #G = torch.nn.DataParallel(G)
-    #D = torch.nn.DataParallel(D)
-    #net.load_state_dict(torch.load('./parameters/paramters'))
-    #print('model restored!')
-    Goptimizer = torch.optim.Adam(G.parameters(), lr = 0.00003)
-    Doptimizer = torch.optim.Adam(D.parameters(), lr = 0.00003)
-
-    train_step = 0
-    mean_print = 1
-
-    D_train_loss = torch.autograd.Variable(torch.Tensor([1.0]))
-    G_train_loss = torch.autograd.Variable(torch.Tensor([3.0]))
-
-    Loss = nn.BCELoss()
-
-    transform = transforms.Compose([transforms.ToTensor(),
-                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-    trainset = CycleGANDataset(root='./datasets/horse2zebra', transform=transform, train_flag='train')
-    # estset = torchvision.datasets.MNIST(root = './MNIST/test', train = False, download = True, transform = transform)
-
-    trainloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
-    # testloader = DataLoader(testset, batch_size = batch_size, shuffle = False, num_workers = 2)
-
-
-    if __name__ == '__main__':
-
-        train_step = 1
-        for epoch in range(1):
-            for i, (imgA, imgB) in enumerate(trainloader):
-                print(G(imgA.cuda()))
-                print(D(G(imgA.cuda())))
+        return x # no sigmoid for LSGAN.

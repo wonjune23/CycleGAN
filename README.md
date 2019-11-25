@@ -1,6 +1,6 @@
 # CycleGAN
-![input](./examples/input.jpg, width=200)
-![output](./examples/output.jpg, width=200)
+<img src='examples/input.jpg' width=200>
+<img src='examples/output.jpg' width=200>
 
 CycleGAN pytorch custom implementation.
 

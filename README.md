@@ -54,5 +54,5 @@ You can see the example training processes here: https://app.wandb.ai/wonjune/cy
 - If you have ROS installed in your system and it causes error importing cv2, you need to add these lines before importing cv2 in DataLoader.py.
 
 
-    import sys
-    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+      import sys
+      sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')

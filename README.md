@@ -1,7 +1,13 @@
 # CycleGAN
+![input](./examples/input.jpg)
+![output](./examples/output.jpg)
+
 CycleGAN pytorch custom implementation.
 
 ## Prerequisites
+
+- Linux
+
 - python-anaconda (3.6)
 
 - pytorch
@@ -32,3 +38,5 @@ The datasets will be automatically downloaded using the original code provided b
 to use wandb : --use_wandb 1
 
 to specify the gpu : --gpu [num]
+
+You can see the example training processes here: https://app.wandb.ai/wonjune/cycleGAN?workspace=user-wonjune

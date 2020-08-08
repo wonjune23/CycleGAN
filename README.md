@@ -17,13 +17,13 @@ CycleGAN pytorch custom implementation.
 
 - tqdm : pip install tqdm
 
-(optional) if you know how to use wandb, you can log your training.
+(optional) 
 
 - wandb : pip install wandb
 
 ## Train / Test
 
-- Clone this repo and change directory:
+- Clone this repo:
 
 
       git clone https://github.com/wonjune23/CycleGAN.git     
@@ -48,10 +48,3 @@ to use wandb : --use_wandb 1
 to specify the gpu : --gpu [num]
 
 You can see the example training processes here: https://app.wandb.ai/wonjune/cycleGAN?workspace=user-wonjune
-
-### Possible Error
-- If you have ROS-kinetic installed in your system and it causes error importing cv2, you need to add these lines before importing cv2 in DataLoader.py.
-
-
-      import sys
-      sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
